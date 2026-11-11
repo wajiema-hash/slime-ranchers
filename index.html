@@ -7,7 +7,7 @@ i just edited it a bit to make it better for gn-math
 <html lang="en-us">
 
 <head>
-    <base href="https://cdn.jsdelivr.net/gh/web-ports/slime-ranchers@f0c5856ac43cf0cfbab4c58139282fc75f9b1861/">
+    <base href="./">
     <meta charset="utf-8">
     <title>Slime Rancher Decompiled v0.2.1</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
@@ -51,16 +51,16 @@ i just edited it a bit to make it better for gn-math
     let loadedBytes = 0;
 
     async function fetchWithProgress(url) {
-        const response = await fetch(url);
+        const response = await fetch(url, { cache: "no-store" });
+        if (!response.ok) {
+            throw new Error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`);
+        }
         const reader = response.body.getReader();
         let chunks = [];
         let received = 0;
 
         while (true) {
-            const {
-                done,
-                value
-            } = await reader.read();
+            const { done, value } = await reader.read();
             if (done) break;
             received += value.length;
             loadedBytes += value.length;
@@ -107,41 +107,45 @@ i just edited it a bit to make it better for gn-math
         }
     }
 
-
     (async () => {
-        const [dataUrl] = await Promise.all([
-            mergeFiles(getParts("Build/slimeBUILDS.data.unityweb", 1, 3)),
-        ]);
+        try {
+            const [dataUrl] = await Promise.all([
+                mergeFiles(getParts("Build/slimeBUILDS.data.unityweb", 1, 3)),
+            ]);
 
-        const json = {
-            "companyName": "Snubs",
-            "productName": "Slime Rancher Prototype",
-            "dataUrl": dataUrl,
-            "wasmCodeUrl": "slimeBUILDS.wasm.code.unityweb",
-            "wasmFrameworkUrl": "slimeBUILDS.framework.unityweb",
-            "TOTAL_MEMORY": 536870912,
-            "graphicsAPI": ["WebGL 2.0", "WebGL 1.0"],
-            "webglContextAttributes": {
-                "preserveDrawingBuffer": false
-            },
-            "splashScreenStyle": "Dark"
-        };
-
-        let blob = new Blob([JSON.stringify(json)], {
-            type: "application/json"
-        });
-        let blobUrl = URL.createObjectURL(blob);
-        window.addEventListener("resize", resizeUnityContainer);
-
-        UnityLoader.instantiate("gameContainer", json, {
-            url: blobUrl,
-            Module: {
-                onRuntimeInitialized: function() {
-                    resizeUnityContainer();
-                    document.querySelector("#loading-text").remove();
+            const json = {
+                "companyName": "Snubs",
+                "productName": "Slime Rancher Prototype",
+                "dataUrl": dataUrl,
+                "wasmCodeUrl": "Build/slimeBUILDS.wasm.code.unityweb",
+                "wasmFrameworkUrl": "Build/slimeBUILDS.framework.unityweb",
+                "TOTAL_MEMORY": 536870912,
+                "graphicsAPI": ["WebGL 2.0", "WebGL 1.0"],
+                "webglContextAttributes": {
+                    "preserveDrawingBuffer": false
                 },
-            },
-        });
+                "splashScreenStyle": "Dark"
+            };
+
+            let blob = new Blob([JSON.stringify(json)], {
+                type: "application/json"
+            });
+            let blobUrl = URL.createObjectURL(blob);
+            window.addEventListener("resize", resizeUnityContainer);
+
+            UnityLoader.instantiate("gameContainer", json, {
+                url: blobUrl,
+                Module: {
+                    onRuntimeInitialized: function() {
+                        resizeUnityContainer();
+                        document.querySelector("#loading-text").remove();
+                    },
+                },
+            });
+        } catch (err) {
+            console.error(err);
+            loadingText.innerHTML = `FAILED TO LOAD GAME: ${err.message}`;
+        }
     })();
 </script>
 

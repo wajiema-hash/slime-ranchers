@@ -1,0 +1,13 @@
+{
+  "name": "slime-ranchers",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "serve . -l 3000",
+    "start": "serve . -l 3000",
+    "preview": "serve . -l 4173"
+  },
+  "dependencies": {
+    "serve": "^14.2.1"
+  }
+}
